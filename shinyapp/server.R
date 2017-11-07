@@ -84,8 +84,7 @@ shinyServer(function(input, output, session) {
     
     output$myImage <- renderImage({
         validate(
-            need(refname(), "Sorry, there is no data for you requested combination. 
-                 Please change your input selections"
+            need(refname(), "Sorry, there is no data for your requested analysis."
             )
         )
         ################################################################################        

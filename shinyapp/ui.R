@@ -9,12 +9,13 @@ shinyUI(pageWithSidebar(
     headerPanel("Minor Variant Phasing Tool"),
     
     sidebarPanel(
-        fileInput('bamfile', 'Choose bam File'),
-        fileInput('reffile', 'Choose Reference File'),
+        fileInput('bamfile', 'Choose bam File',accept = c('.bam','.BAM','.Bam'),
+                  placeholder = 'bam format'),
+        fileInput('reffile', 'Choose Reference File',placeholder = 'fasta format'),
         uiOutput("selector"),
         wellPanel(
         checkboxInput("usesnp","Use Reference SNPs",F),
-        fileInput('snpfile', 'Choose SNPs File')
+        fileInput('snpfile', 'Choose SNPs File',placeholder = 'csv format')
         ),
         #actionButton("goButton", "Update View",icon = icon("refresh")),
         submitButton("Update View"),
