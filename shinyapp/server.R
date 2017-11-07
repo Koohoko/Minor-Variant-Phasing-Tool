@@ -39,27 +39,56 @@ shinyServer(function(input, output, session) {
             return(NULL)
         return(read.fasta(inFile$datapath))
     })
+
     output$selector <- renderUI({
-        selectInput("var", "Choose segment:", as.list(names(data()))) 
+    selectInput("var", "Choose segment:", as.list(names(data()))) 
     })
     
+    # ifsnp <- reactive({
+    #     if(!input$usesnp) return(NULL)
+    #     return(input$usesnp)
+    # })
+    # 
+    # observe({
+    #     updateCheckboxInput(session, "usesnp",value = input$usesnp)
+    # })
+    
+
+    # observeEvent(input$insertBtn, {
+    #         insertUI(
+    #             selector = '#placeholder',
+    #             #ui = textInput('txt8', 'Insert some text'),
+    #             immediate = TRUE,
+    #             ui = fileInput('snpfile', 'Choose SNPs File')
+    #         )
+    # },once=TRUE)
+
+
     observe({
         file1 = input$bamfile
         file2 = input$reffile
         file3 = input$snpfile
         var = input$var
-        if (is.null(file1) | is.null(file2) | is.null(file3) |is.null(var)) {
+        if (is.null(file1) | is.null(file2) |is.null(var)) {
             return(NULL)
         }
         bam = readBAM(file1$datapath)
         ref = read.fasta(file2$datapath)
-        illu_result = read.csv(file3$datapath)
+        
+        if(input$usesnp){
+            illu_result = read.csv(file3$datapath)
+        }
     })
     
-    
     refname = reactive({input$var})
+    
     output$myImage <- renderImage({
-        ################################################################################
+        validate(
+            need(refname(), "Sorry, there is no data for you requested combination. 
+                 Please change your input selections"
+            )
+        )
+        ################################################################################        
         ref.seq = ref[[refname()]]
 
         seq = bam$seq[bam$rname==refname()]
@@ -68,7 +97,7 @@ shinyServer(function(input, output, session) {
         pos = bam$pos[bam$rname==refname()]
         width = bam$qwidth[bam$rname==refname()]
         
-        #get the seqs by cigar        
+        #get the seqs by cigar
         seq.clip = mapply(function(x,y){
             cigar.1 = unlist(strsplit(x,"\\d+"))
             cigar.2 = unlist(strsplit(x,"\\D"))
@@ -95,14 +124,20 @@ shinyServer(function(input, output, session) {
         pos.filter = pos[check]
 
         df = data.frame()
-        
-        for(ii in 1:length(seq.clip.filter)){
-            pos.tmp = pos.filter[ii] - 1
-            df = rbind(df, c(rep('-',pos.tmp),s2c(seq.clip.filter[ii])))
+
+        for(jj in 1:length(seq.clip.filter)){
+            pos.tmp = pos.filter[jj] - 1
+            df = rbind(df, c(rep('-',pos.tmp),s2c(seq.clip.filter[jj])))
         }
-        #output$text = renderText(ref.seq[[300]])
-        ilu.r.tmp = illu_result[illu_result[,1] == refname(),]
-        df.tmp = df[,ilu.r.tmp[,2]]
+
+        #illumina snps filtering
+        if(input$usesnp){
+            ilu.r.tmp = illu_result[illu_result[,1] == refname(),]
+            df.tmp = df[,ilu.r.tmp[,2]]
+        } else {
+            df.tmp = df
+        }
+
 
         ##fill the gap with consensus
         df.tmp = as.data.frame(apply(df.tmp,2,function(x){x[x=='-']=names(which.max(table(x)));
@@ -111,14 +146,19 @@ shinyServer(function(input, output, session) {
 
         df.tmp.agg = aggregate(cbind(df.tmp[0],Count=1), by=df.tmp, length)
         df.tmp.agg = df.tmp.agg[order(df.tmp.agg[,ncol(df.tmp.agg)],decreasing = T),]
+        if(input$usesnp){
+            names(df.tmp.agg)[1:nrow(ilu.r.tmp)] = paste0(ilu.r.tmp[,3],ilu.r.tmp[,2],ilu.r.tmp[,4])
+        } else {
+            names(df.tmp.agg)[1:(ncol(df.tmp.agg)-1)] = 1:(ncol(df.tmp.agg)-1)
+            df.tmp.agg = df.tmp.agg[,apply(df.tmp.agg,2,function(x){length(table(x))>1})]
+        }
 
-        names(df.tmp.agg)[1:nrow(ilu.r.tmp)] = paste0(ilu.r.tmp[,3],ilu.r.tmp[,2],ilu.r.tmp[,4])
         df.tmp.agg.t = t(df.tmp.agg)
         colnames(df.tmp.agg.t) = paste0('a',1:ncol(df.tmp.agg.t))
 
         df.tmp.agg.t.m = melt(df.tmp.agg.t[1:(nrow(df.tmp.agg.t)-1),])
 
-        ggplot(df.tmp.agg.t.m,aes(x=Var2,y=Var1)) + geom_tile(aes(fill=value,
+        ggplot(df.tmp.agg.t.m,aes(x=Var2,y=factor(Var1))) + geom_tile(aes(fill=value,
                                                                   width=0.9, height=1)) +theme_classic() +
             theme(axis.ticks = element_blank(),
                   axis.line = element_blank())  + xlab('Count') +ylab('Position')+
@@ -128,7 +168,12 @@ shinyServer(function(input, output, session) {
                               values = c('#5398D9','#F4E3B1','#D96B0C','#A53A3B'))+
             #'#F1F3F2',
             scale_y_discrete(limits = rev(levels(df.tmp.agg.t.m[,1])))
-        ggsave(paste0('./images/image1.jpg'),device = 'jpeg',width = 15,height = 15,dpi = 400)
+        if(input$usesnp){
+            ggsave('./images/image1.jpg',device = 'jpeg',width = 15,height = 15,dpi = 300)
+        } else {
+            ggsave('./images/image1.jpg',device = 'jpeg',width = 60,height = 60,dpi = 150,limitsize = F)
+        }
+
         ################################################################################    
 
         if(length(dir('images/'))>1){

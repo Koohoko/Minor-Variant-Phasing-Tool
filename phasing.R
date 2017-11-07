@@ -91,6 +91,7 @@ for(i in 1:length(names(ref))){
     return(x)}))
     df.tmp = df.tmp[,apply(df.tmp,2,function(x){names(which.max(table(x)))})!='-']
     
+    ##ploting
     df.tmp.agg = aggregate(cbind(df.tmp[0],Count=1), by=df.tmp, length)
     df.tmp.agg = df.tmp.agg[order(df.tmp.agg[,ncol(df.tmp.agg)],decreasing = T),]
     

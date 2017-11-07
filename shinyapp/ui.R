@@ -11,11 +11,16 @@ shinyUI(pageWithSidebar(
     sidebarPanel(
         fileInput('bamfile', 'Choose bam File'),
         fileInput('reffile', 'Choose Reference File'),
-        fileInput('snpfile', 'Choose SNPs File'),
         uiOutput("selector"),
+        wellPanel(
+        checkboxInput("usesnp","Use Reference SNPs",F),
+        fileInput('snpfile', 'Choose SNPs File')
+        ),
+        #actionButton("goButton", "Update View",icon = icon("refresh")),
         submitButton("Update View"),
         hr(),
-        a(href="https://github.com/Koohoko", "Copyright (c) 2017 Haogao Gu. All rights reserved.")
+        a(href="https://github.com/Koohoko/Minor-Variant-Phasing-Tool",
+          "Copyright (c) 2017 Haogao Gu. All rights reserved.")
     ),
     
     
