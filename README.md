@@ -6,18 +6,11 @@ Minor-Variant-Phasing-Tool for Pacbio data
 * Reference file: Fasta format.
 * SNPs file: results from LoFreq, with first column records _segment name_, second for _position_, third for _Ref nucleotide_ and the fourth for _Alt nucletide_. Just like below.
 
-|CHROM|POS|REF|ALT| 
-|:--|:--|:--|:--|
-|Brisbane_PB1_codon_mutant|4|G|A|
-|Brisbane_M_codon_mutant_|92|G|C|
-|brisbane_NS_codon_mutant|100|A|G|
-
-|CHROM|POS|REF|ALT|
-|:--|:--|:--|:--|
-|Brisbane_PB1_codon_mutant|POS|REF|ALT|
-|Brisbane_M_codon_mutant_|POS|REF|ALT|
-|brisbane_NS_codon_mutant|POS|REF|ALT|
-
+	|CHROM|POS|REF|ALT| 
+	|:--|:--|:--|:--|
+	|Brisbane_PB1_codon_mutant|4|G|A|
+	|Brisbane_M_codon_mutant_|92|G|C|
+	|brisbane_NS_codon_mutant|100|A|G|
 
 ### Output
 * Phasing graph
