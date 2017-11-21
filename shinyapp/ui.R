@@ -20,7 +20,7 @@ shinyUI(pageWithSidebar(
         #actionButton("goButton", "Update View",icon = icon("refresh")),
         submitButton("Update View"),
         hr(),
-        a(href="https://github.com/Koohoko/Minor-Variant-Phasing-Tool",
+        tags$a(href="https://github.com/Koohoko/Minor-Variant-Phasing-Tool",
           "Copyright (c) 2017 Haogao Gu. All rights reserved.")
     ),
     

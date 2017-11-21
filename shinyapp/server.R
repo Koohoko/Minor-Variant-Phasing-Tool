@@ -39,7 +39,21 @@ shinyServer(function(input, output, session) {
             return(NULL)
         return(read.fasta(inFile$datapath))
     })
-
+    bamfile.r <- reactive({
+        file1 = input$bamfile   
+        if (is.null(file1))
+            return(NULL)
+        return(readBAM(file1$datapath))
+    })
+    ill.r <- reactive({
+        file2 = input$snpfile   
+        if (is.null(file2))
+            return(NULL)
+        return(read.csv(file2$datapath))
+    })
+    refname = reactive({input$var})
+    
+    
     output$selector <- renderUI({
     selectInput("var", "Choose segment:", as.list(names(data()))) 
     })
@@ -62,25 +76,7 @@ shinyServer(function(input, output, session) {
     #             ui = fileInput('snpfile', 'Choose SNPs File')
     #         )
     # },once=TRUE)
-
-
-    observe({
-        file1 = input$bamfile
-        file2 = input$reffile
-        file3 = input$snpfile
-        var = input$var
-        if (is.null(file1) | is.null(file2) |is.null(var)) {
-            return(NULL)
-        }
-        bam = readBAM(file1$datapath)
-        ref = read.fasta(file2$datapath)
-        
-        if(input$usesnp){
-            illu_result = read.csv(file3$datapath)
-        }
-    })
     
-    refname = reactive({input$var})
     
     output$myImage <- renderImage({
         validate(
@@ -88,6 +84,9 @@ shinyServer(function(input, output, session) {
             )
         )
         ################################################################################        
+        ref = data()
+        bam = bamfile.r()
+        illu_result = ill.r()
         ref.seq = ref[[refname()]]
 
         seq = bam$seq[bam$rname==refname()]
@@ -141,22 +140,26 @@ shinyServer(function(input, output, session) {
         ##fill the gap with consensus
         df.tmp = as.data.frame(apply(df.tmp,2,function(x){x[x=='-']=names(which.max(table(x)));
         return(x)}))
+        names.tmp = paste0(ilu.r.tmp[,3],ilu.r.tmp[,2],
+                           ilu.r.tmp[,4])[apply(df.tmp,2,function(x){names(which.max(table(x)))})!='-']
         df.tmp = df.tmp[,apply(df.tmp,2,function(x){names(which.max(table(x)))})!='-']
 
         df.tmp.agg = aggregate(cbind(df.tmp[0],Count=1), by=df.tmp, length)
         df.tmp.agg = df.tmp.agg[order(df.tmp.agg[,ncol(df.tmp.agg)],decreasing = T),]
+        
         if(input$usesnp){
-            names(df.tmp.agg)[1:nrow(ilu.r.tmp)] = paste0(ilu.r.tmp[,3],ilu.r.tmp[,2],ilu.r.tmp[,4])
+            names(df.tmp.agg)[1:(ncol(df.tmp.agg)-1)] = names.tmp
         } else {
-            names(df.tmp.agg)[1:(ncol(df.tmp.agg)-1)] = 1:(ncol(df.tmp.agg)-1)
             df.tmp.agg = df.tmp.agg[,apply(df.tmp.agg,2,function(x){length(table(x))>1})]
+            names(df.tmp.agg)[1:(ncol(df.tmp.agg)-1)] = gsub('\\D',
+                                                             '',names(df.tmp.agg)[1:(ncol(df.tmp.agg)-1)])
         }
 
         df.tmp.agg.t = t(df.tmp.agg)
         colnames(df.tmp.agg.t) = paste0('a',1:ncol(df.tmp.agg.t))
-
         df.tmp.agg.t.m = melt(df.tmp.agg.t[1:(nrow(df.tmp.agg.t)-1),])
-
+        
+        ##ploting
         ggplot(df.tmp.agg.t.m,aes(x=Var2,y=factor(Var1))) + geom_tile(aes(fill=value,
                                                                   width=0.9, height=1)) +theme_classic() +
             theme(axis.ticks = element_blank(),
