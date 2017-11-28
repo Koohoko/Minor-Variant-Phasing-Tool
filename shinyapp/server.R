@@ -121,18 +121,22 @@ shinyServer(function(input, output, session) {
         seq.clip.filter = seq.clip[check]
         pos.filter = pos[check]
 
-        df = data.frame()
-
-        for(jj in 1:length(seq.clip.filter)){
-            pos.tmp = pos.filter[jj] - 1
-            df = rbind(df, c(rep('-',pos.tmp),s2c(seq.clip.filter[jj])))
-        }
-
+        
         #illumina snps filtering
         if(input$usesnp){
             ilu.r.tmp = illu_result[illu_result[,1] == refname(),]
-            df.tmp = df[,ilu.r.tmp[,2]]
+            tmp = mapply(function(x,y){c(rep('-',(x-1)),s2c(y))},pos.filter,seq.clip.filter)
+            tmp = lapply(tmp,function(x){x[ilu.r.tmp[,2]]})
+            df.tmp = data.frame()
+            for(ii in 1:length(tmp)){
+                df.tmp = rbind(df.tmp,tmp[[ii]])
+            }
         } else {
+            df = data.frame()
+            for(jj in 1:length(seq.clip.filter)){
+                pos.tmp = pos.filter[jj] - 1
+                df = rbind(df, c(rep('-',pos.tmp),s2c(seq.clip.filter[jj])))
+            }
             df.tmp = df
         }
 
